@@ -1,17 +1,17 @@
 import streamlit as st
-from openai import OpenAI 
+from openai 
 import time
 import json
 import os
 from email_tool import send_email
 
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def setup_assistant():
     try:
       
-        assistant = client.beta.assistants.create(  
+        assistant = openai.beta.assistants.create(  
             name="Context AI Assistant",
             instructions="""You are a helpful assistant that answers questions ONLY based on the training content provided by the user. 
 
@@ -83,14 +83,14 @@ Please answer the above question using ONLY the training content provided above.
 """
         
         # Add message to thread
-        client.beta.threads.messages.create(  # Use client instance
+        openai.beta.threads.messages.create(  # Use client instance
             thread_id=thread.id,
             role="user",
             content=message_content
         )
         
         # Create and run the assistant
-        run = client.beta.threads.runs.create(  # Use client instance
+        run = openai.beta.threads.runs.create(  # Use client instance
             assistant_id=assistant_id,
             thread_id=thread.id
         )
@@ -129,7 +129,7 @@ Please answer the above question using ONLY the training content provided above.
                                 })
                     
                     # Submit tool outputs
-                    client.beta.threads.runs.submit_tool_outputs(  # Use client instance
+                    openai.beta.threads.runs.submit_tool_outputs(  # Use client instance
                         thread_id=thread.id,
                         run_id=run.id,
                         tool_outputs=tool_outputs

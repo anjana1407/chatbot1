@@ -4,10 +4,7 @@ import time
 import json
 import os
 from email_tool import send_email
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
 
 # Create OpenAI client instance
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))

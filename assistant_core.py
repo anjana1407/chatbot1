@@ -4,10 +4,12 @@ import time
 import json
 from email_tool import send_email
 
-client = OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+def get_client():
+    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
 
 def setup_assistant():
     try:
+        client = get_client()
         assistant = client.beta.assistants.create(
             name="Context AI Assistant",
             instructions="""You are a helpful assistant that answers questions ONLY based on the training content provided by the user. 
@@ -55,6 +57,7 @@ IMPORTANT RULES:
 
 def get_response(question, assistant_id, file_id=None):
     try:
+        client = get_client()
         try:
             with open("context.txt", "r", encoding="utf-8") as f:
                 context_content = f.read().strip()

@@ -1,15 +1,15 @@
 import streamlit as st
-import openai 
+import openai
 import time
 import json
 import os
 from email_tool import send_email
 
-client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
-
 def setup_assistant():
     try:
-        assistant = client.beta.assistants.create(  
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        
+        response = openai.beta.assistants.create(
             name="Context AI Assistant",
             instructions="""You are a helpful assistant that answers questions ONLY based on the training content provided by the user. 
 
@@ -48,7 +48,7 @@ IMPORTANT RULES:
             ]
         )
         
-        return assistant.id, None
+        return response.id, None
         
     except Exception as e:
         st.error(f"Error creating assistant: {str(e)}")
@@ -56,6 +56,8 @@ IMPORTANT RULES:
 
 def get_response(question, assistant_id, file_id=None):
     try:
+        openai.api_key = st.secrets["OPENAI_API_KEY"]
+        
         try:
             with open("context.txt", "r", encoding="utf-8") as f:
                 context_content = f.read().strip()
@@ -65,7 +67,7 @@ def get_response(question, assistant_id, file_id=None):
         if not context_content:
             return "No training content available. Please add some training content first."
         
-        thread = client.beta.threads.create()
+        thread = openai.beta.threads.create()
         
         message_content = f"""Training Content:
 ========================================
@@ -77,13 +79,13 @@ User Question: {question}
 Please answer the above question using ONLY the training content provided above. If the question cannot be answered from the training content, respond with: "I'm sorry, I can only answer questions based on the provided training content."
 """
         
-        client.beta.threads.messages.create(
+        openai.beta.threads.messages.create(
             thread_id=thread.id,
             role="user",
             content=message_content
         )
         
-        run = client.beta.threads.runs.create(
+        run = openai.beta.threads.runs.create(
             assistant_id=assistant_id,
             thread_id=thread.id
         )
@@ -93,7 +95,7 @@ Please answer the above question using ONLY the training content provided above.
         
         while attempts < max_attempts:
             try:
-                run_status = client.beta.threads.runs.retrieve(
+                run_status = openai.beta.threads.runs.retrieve(
                     thread_id=thread.id, 
                     run_id=run.id
                 )
@@ -119,14 +121,14 @@ Please answer the above question using ONLY the training content provided above.
                                     "output": f"Error: {str(e)}"
                                 })
                     
-                    client.beta.threads.runs.submit_tool_outputs(
+                    openai.beta.threads.runs.submit_tool_outputs(
                         thread_id=thread.id,
                         run_id=run.id,
                         tool_outputs=tool_outputs
                     )
                 
                 elif run_status.status == "completed":
-                    messages = client.beta.threads.messages.list(thread_id=thread.id)
+                    messages = openai.beta.threads.messages.list(thread_id=thread.id)
                     for message in messages.data:
                         if message.role == "assistant":
                             for content in message.content:

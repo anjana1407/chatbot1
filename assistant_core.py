@@ -2,14 +2,13 @@ import streamlit as st
 import openai
 import time
 import json
-import os
 from email_tool import send_email
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def setup_assistant():
     try:
-        openai.api_key = st.secrets["OPENAI_API_KEY"]
-        
-        response = openai.beta.assistants.create(
+        assistant = openai.beta.assistants.create(
             name="Context AI Assistant",
             instructions="""You are a helpful assistant that answers questions ONLY based on the training content provided by the user. 
 
@@ -18,7 +17,7 @@ IMPORTANT RULES:
 2. If the user's question is outside the scope of the training content, respond EXACTLY with: "I'm sorry, I can only answer questions based on the provided training content."
 3. Always stay within the bounds of the provided context.
 4. Do not use your general knowledge - only use the training content provided.""",
-            model="gpt-4o-mini",
+            model="gpt-4o",
             tools=[
                 {
                     "type": "function",
@@ -48,7 +47,7 @@ IMPORTANT RULES:
             ]
         )
         
-        return response.id, None
+        return assistant.id, None
         
     except Exception as e:
         st.error(f"Error creating assistant: {str(e)}")
@@ -56,8 +55,6 @@ IMPORTANT RULES:
 
 def get_response(question, assistant_id, file_id=None):
     try:
-        openai.api_key = st.secrets["OPENAI_API_KEY"]
-        
         try:
             with open("context.txt", "r", encoding="utf-8") as f:
                 context_content = f.read().strip()

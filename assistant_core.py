@@ -1,9 +1,30 @@
 import streamlit as st
-import openai
 import time
 import json
 import os
-from email_tool import send_email
+
+# Handle OpenAI import with detailed error reporting
+try:
+    import openai
+    st.success(" OpenAI imported successfully")
+except ImportError as e:
+    st.error(f"Failed to import OpenAI: {str(e)}")
+    st.error("Make sure 'openai' is in your requirements.txt file")
+    st.stop()
+except Exception as e:
+    st.error(f" Unexpected error importing OpenAI: {str(e)}")
+    st.stop()
+
+# Handle email_tool import
+try:
+    from email_tool import send_email
+    st.success(" Email tool imported successfully")
+except ImportError as e:
+    st.error(f" Failed to import email_tool: {str(e)}")
+    st.info("Creating a fallback email function...")
+    
+    def send_email(to, subject, body):
+        return f"Email simulation: Sent to {to} with subject '{subject}'"
 
 # Initialize the OpenAI client
 client = openai.OpenAI(api_key=st.secrets["OPENAI_API_KEY"])

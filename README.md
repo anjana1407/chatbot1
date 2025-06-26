@@ -27,7 +27,7 @@ pip install -r requirements.txt
      streamlit run main.py
 
 <h3>Notes</h3>
-- The assistant is created dynamically each time new context is saved
-- The context is stored in a local file called context.txt
-- Tool calling is used to simulate sending emails with subject and body
+- The assistant is created dynamically each time new context is saved  
+- The context is stored in a local file called context.txt  
+- Tool calling is used to simulate sending emails with subject and body  
 

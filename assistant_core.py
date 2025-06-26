@@ -1,16 +1,17 @@
 import streamlit as st
-from openai import OpenAI
+import openai 
 import time
 import json
+import os
 from email_tool import send_email
 
-def get_client():
-    return OpenAI(api_key=st.secrets["OPENAI_API_KEY"])
+
+openai.api_key = st.secrets["OPENAI_API_KEY"]
 
 def setup_assistant():
     try:
-        client = get_client()
-        assistant = client.beta.assistants.create(
+      
+        assistant = openai.beta.assistants.create(  
             name="Context AI Assistant",
             instructions="""You are a helpful assistant that answers questions ONLY based on the training content provided by the user. 
 
@@ -19,7 +20,7 @@ IMPORTANT RULES:
 2. If the user's question is outside the scope of the training content, respond EXACTLY with: "I'm sorry, I can only answer questions based on the provided training content."
 3. Always stay within the bounds of the provided context.
 4. Do not use your general knowledge - only use the training content provided.""",
-            model="gpt-4o",
+            model="gpt-4o-mini",
             tools=[
                 {
                     "type": "function",
@@ -57,7 +58,7 @@ IMPORTANT RULES:
 
 def get_response(question, assistant_id, file_id=None):
     try:
-        client = get_client()
+        # Check if context file exists
         try:
             with open("context.txt", "r", encoding="utf-8") as f:
                 context_content = f.read().strip()
@@ -67,8 +68,10 @@ def get_response(question, assistant_id, file_id=None):
         if not context_content:
             return "No training content available. Please add some training content first."
         
-        thread = client.beta.threads.create()
+        # Create a new thread
+        thread = client.beta.threads.create()  # Use client instance
         
+        # Prepare the message with context
         message_content = f"""Training Content:
 ========================================
 {context_content}
@@ -79,28 +82,32 @@ User Question: {question}
 Please answer the above question using ONLY the training content provided above. If the question cannot be answered from the training content, respond with: "I'm sorry, I can only answer questions based on the provided training content."
 """
         
-        client.beta.threads.messages.create(
+        # Add message to thread
+        openai.beta.threads.messages.create(  # Use client instance
             thread_id=thread.id,
             role="user",
             content=message_content
         )
         
-        run = client.beta.threads.runs.create(
+        # Create and run the assistant
+        run = openai.beta.threads.runs.create(  # Use client instance
             assistant_id=assistant_id,
             thread_id=thread.id
         )
         
+        # Poll for completion
         max_attempts = 30
         attempts = 0
         
         while attempts < max_attempts:
             try:
-                run_status = client.beta.threads.runs.retrieve(
+                run_status = client.beta.threads.runs.retrieve(  # Use client instance
                     thread_id=thread.id, 
                     run_id=run.id
                 )
                 
                 if run_status.status == "requires_action":
+                    # Handle function calls
                     tool_outputs = []
                     for tool_call in run_status.required_action.submit_tool_outputs.tool_calls:
                         if tool_call.function.name == "send_email":
@@ -121,14 +128,16 @@ Please answer the above question using ONLY the training content provided above.
                                     "output": f"Error: {str(e)}"
                                 })
                     
-                    client.beta.threads.runs.submit_tool_outputs(
+                    # Submit tool outputs
+                    openai.beta.threads.runs.submit_tool_outputs(  # Use client instance
                         thread_id=thread.id,
                         run_id=run.id,
                         tool_outputs=tool_outputs
                     )
                 
                 elif run_status.status == "completed":
-                    messages = client.beta.threads.messages.list(thread_id=thread.id)
+                    # Get the response
+                    messages = client.beta.threads.messages.list(thread_id=thread.id)  # Use client instance
                     for message in messages.data:
                         if message.role == "assistant":
                             for content in message.content:
@@ -143,6 +152,7 @@ Please answer the above question using ONLY the training content provided above.
                 elif run_status.status in ["cancelled", "expired"]:
                     return f"Assistant run {run_status.status}."
                 
+                # Continue polling
                 time.sleep(1)
                 attempts += 1
                 
